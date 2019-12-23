@@ -9,15 +9,9 @@ type Map struct {
 	mutex *sync.Mutex
 }
 
-
 type MapOfMaps struct {
 	cache map[string]*Map
 	mutex *sync.Mutex
-}
-
-type ServiceEntryAddressStore struct {
-	EntryAddresses	map[string]string `yaml:"entry-addresses,omitempty"`
-	Addresses		[]string   `yaml:"addresses,omitempty"` //trading space for efficiency - this will give a quick way to validate that the address is unique
 }
 
 func NewMap() *Map {
@@ -53,7 +47,6 @@ func (s *Map) Delete(key string) {
 func (s *Map) Map() map[string]string {
 	return s.cache
 }
-
 
 func (s *MapOfMaps) Put(pkey string, key string, value string) {
 	defer s.mutex.Unlock()
