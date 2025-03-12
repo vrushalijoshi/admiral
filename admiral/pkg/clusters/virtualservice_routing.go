@@ -513,13 +513,6 @@ func generateVirtualServiceForIncluster(
 
 	virtualService.Name = fmt.Sprintf("%s-%s", vsName, inclusterVSNameSuffix)
 
-	// Add the exportTo namespaces to the virtual service
-	if common.EnableExportTo(vsName) {
-		exportToNamespaces := getSortedDependentNamespaces(
-			remoteRegistry.AdmiralCache, vsName, sourceCluster, ctxLogger, true)
-		virtualService.Spec.ExportTo = exportToNamespaces
-	}
-
 	return virtualService, nil
 
 }
@@ -597,23 +590,23 @@ func addUpdateInClusterVirtualServices(
 		return fmt.Errorf("identity is empty")
 	}
 
-	if common.IsVSRoutingInClusterDisabledForIdentity(sourceIdentity) {
-		ctxLogger.Infof(common.CtxLogFormat, "VSBasedRoutingInCluster",
-			"", "", "",
-			fmt.Sprintf(
-				"Writing phase: addUpdateInClusterVirtualServices VS based routing disabled for identity %s",
-				sourceIdentity))
-		return nil
-	}
-
-	if !common.DoVSRoutingInClusterForIdentity(sourceIdentity) {
-		ctxLogger.Infof(common.CtxLogFormat, "VSBasedRoutingInCluster",
-			"", "", "",
-			fmt.Sprintf(
-				"Writing phase: addUpdateInClusterVirtualServices VS based routing disabled for identity %s",
-				sourceIdentity))
-		return nil
-	}
+	//if common.IsVSRoutingInClusterDisabledForIdentity(sourceIdentity) {
+	//	ctxLogger.Infof(common.CtxLogFormat, "VSBasedRoutingInCluster",
+	//		"", "", "",
+	//		fmt.Sprintf(
+	//			"Writing phase: addUpdateInClusterVirtualServices VS based routing disabled for identity %s",
+	//			sourceIdentity))
+	//	return nil
+	//}
+	//
+	//if !common.DoVSRoutingInClusterForIdentity(sourceIdentity) {
+	//	ctxLogger.Infof(common.CtxLogFormat, "VSBasedRoutingInCluster",
+	//		"", "", "",
+	//		fmt.Sprintf(
+	//			"Writing phase: addUpdateInClusterVirtualServices VS based routing disabled for identity %s",
+	//			sourceIdentity))
+	//	return nil
+	//}
 
 	if remoteRegistry == nil {
 		return fmt.Errorf("remoteRegistry is nil")
@@ -632,16 +625,16 @@ func addUpdateInClusterVirtualServices(
 			continue
 		}
 
-		if !common.DoVSRoutingInClusterForCluster(sourceCluster) {
-			ctxLogger.Infof(common.CtxLogFormat, "VSBasedRoutingInCluster",
-				"", "", sourceCluster,
-				"Writing phase: addUpdateInClusterVirtualServices VS based routing disabled for cluster")
-			continue
-		}
+		//if !common.DoVSRoutingInClusterForCluster(sourceCluster) {
+		//	ctxLogger.Infof(common.CtxLogFormat, "VSBasedRoutingInCluster",
+		//		"", "", sourceCluster,
+		//		"Writing phase: addUpdateInClusterVirtualServices VS based routing disabled for cluster")
+		//	continue
+		//}
 
 		ctxLogger.Debugf(common.CtxLogFormat, "VSBasedRoutingInCluster",
 			"", "", sourceCluster,
-			"Writing phase: addUpdateInClusterVirtualServices VS based routing enabled for cluster")
+			"Writing phase: addUpdateInClusterVirtualServices VS based routing for cluster")
 
 		rc := remoteRegistry.GetRemoteController(sourceCluster)
 
@@ -657,6 +650,14 @@ func addUpdateInClusterVirtualServices(
 			ctxLogger.Errorf(common.CtxLogFormat, "addUpdateInClusterVirtualServices",
 				"", "", sourceCluster, err.Error())
 			return err
+		}
+
+		//update exportTo on the incluster vs
+		if common.EnableExportTo(vsName) && common.GetEnableVSRoutingInCluster() && common.DoVSRoutingInClusterForCluster(sourceCluster) && common.DoVSRoutingInClusterForIdentity(sourceIdentity) {
+			virtualService.Spec.ExportTo = getSortedDependentNamespaces(
+				remoteRegistry.AdmiralCache, vsName, sourceCluster, ctxLogger, true)
+		} else {
+			virtualService.Spec.ExportTo = []string{"admiral-sync"}
 		}
 
 		existingVS, err := getExistingVS(ctxLogger, ctx, rc, virtualService.Name, util.IstioSystemNamespace)
