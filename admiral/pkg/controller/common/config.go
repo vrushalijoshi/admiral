@@ -535,6 +535,11 @@ func IsVSRoutingInClusterDisabledForIdentity(identity string) bool {
 	return false
 }
 
+func GetEnableVSRoutingInCluster() bool {
+	wrapper.RLock()
+	defer wrapper.RUnlock()
+	return wrapper.params.EnableVSRoutingInCluster
+}
 func DoVSRoutingInClusterForCluster(cluster string) bool {
 	wrapper.RLock()
 	defer wrapper.RUnlock()
